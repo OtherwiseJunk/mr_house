@@ -14,7 +14,17 @@ fn gore_slots_paytable() -> Vec<PayRule> {
             is_jackpot: false,
         },
         PayRule {
+            pattern: PayPattern::FiveOfAKind(Symbol::Magnathonk),
+            payout: 250,
+            is_jackpot: false,
+        },
+        PayRule {
             pattern: PayPattern::ThreeOfAKind(Symbol::Smugbrow),
+            payout: 25,
+            is_jackpot: false,
+        },
+        PayRule {
+            pattern: PayPattern::ThreeOfAKind(Symbol::Smileyes),
             payout: 25,
             is_jackpot: false,
         },
@@ -55,11 +65,12 @@ pub fn generate_gore_slots() -> SlotMachine {
 
 fn generate_gore_slots_weights() -> Vec<Symbol> {
     let mut weights = HashMap::new();
-    weights.insert(Symbol::Gore, 8 as f64);
+    weights.insert(Symbol::Gore, 9 as f64);
     weights.insert(Symbol::Mean, 10 as f64);
     weights.insert(Symbol::Magnathonk, 12 as f64);
-    weights.insert(Symbol::Smugbrow, 28 as f64);
-    weights.insert(Symbol::Smileyes, 27 as f64);
+    weights.insert(Symbol::Smugbrow, 19 as f64);
+    weights.insert(Symbol::Smileyes, 20 as f64);
+    weights.insert(Symbol::Blank, 6 as f64);
 
     return generate_weighted_symbol_pool(weights.clone());
 }
