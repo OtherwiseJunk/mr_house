@@ -47,3 +47,18 @@ pub async fn slots(ctx: Context<'_>) -> Result<(), Error> {
 
     Ok(())
 }
+
+pub async fn paytable(ctx: Context<'_>) -> Result<(), Error> {
+    let embed = {
+        let slot_machine = GORE_SLOT_MACHINE.lock().unwrap();
+        slot_machine.get_pay_table_embed()
+    };
+
+    ctx.send(CreateReply {
+        embeds: vec![embed],
+        ..Default::default()
+    })
+    .await?;
+
+    Ok(())
+}

@@ -6,6 +6,12 @@ pub mod slot_machine;
 pub mod libcoin;
 
 pub fn get_commands() -> Vec<Command<Data, Error>> {
-    vec![info::info(), slot_machine::slots::slots(),
-        libcoin::balance(), libcoin::deduct(), libcoin::grant()]
+    vec![
+        info::info(), 
+        slot_machine::slots::slots(), 
+        slot_machine::slots::paytable(),
+        libcoin::balance(), 
+        libcoin::deduct(), 
+        libcoin::grant()
+    ]
 }

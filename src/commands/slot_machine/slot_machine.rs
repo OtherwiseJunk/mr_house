@@ -1,5 +1,6 @@
 use rand::Rng;
 use std::collections::HashMap;
+use serenity::builder::{CreateEmbed, CreateEmbedFooter};
 
 #[derive(Debug, Ord, PartialOrd, Eq, PartialEq, Clone, Copy, Hash)]
 pub enum Symbol {
@@ -187,5 +188,39 @@ impl SlotMachine {
             .get(&symbol)
             .cloned()
             .unwrap_or_else(|| "Unknown".to_string())
+    }
+
+    pub fn get_pay_table_embed(&self) -> CreateEmbed {
+        let mut embed = CreateEmbed::default();
+        embed.title("Pay Table")
+            .color(0x5b9e48)
+            .footer(CreateEmbedFooter::new("* Jackpot payouts are rolling, this value is the minimum."));
+
+        for rule in &self.pay_table {
+            let title = self.get_pay_rule_title(rule);
+            let payout = rule.payout.to_string();
+            let is_jackpot = if rule.is_jackpot {
+                "*"
+            } else {
+                ""
+            };
+            embed.field(title + &is_jackpot, payout, false);
+        }
+    }
+
+    fn get_pay_rule_title(&self, rule: &PayRule) -> String {
+        match &rule.pattern {
+            PayPattern::FiveOfAKind(symbol) => self.get_symbol_string(*symbol).repeat(5),
+            PayPattern::ThreeOfAKind(symbol) => self.get_symbol_string(*symbol).repeat(3),
+            PayPattern::MinCountAnyDistribution(symbols, min_count) => {
+                let symbol_str = symbols
+                    .iter()
+                    .map(|s| self.get_symbol_string(*s))
+                    .collect::<Vec<_>>()
+                    .join(", ");
+                format!("{}x any of [{}]", min_count, symbol_str)
+            }
+            PayPattern::MinCount(symbol, min_count) => self.get_symbol_string(*symbol).repeat(*min_count)
+        }
     }
 }
