@@ -191,21 +191,19 @@ impl SlotMachine {
     }
 
     pub fn get_pay_table_embed(&self) -> CreateEmbed {
-        let mut embed = CreateEmbed::default();
-        embed.title("Pay Table")
+        let embed = CreateEmbed::new()
+            .title("Pay Table")
             .color(0x5b9e48)
-            .footer(CreateEmbedFooter::new("* Jackpot payouts are rolling, this value is the minimum."));
+            .footer(CreateEmbedFooter::new("* Jackpot payouts are rolling, this value is the minimum."))
+            .fields(self.pay_table.iter().map(|rule| {
+                let title = self.get_pay_rule_title(rule);
+                let payout = rule.payout.to_string();
+                let is_jackpot = if rule.is_jackpot { " (Jackpot)" } else { "" };
+                let is_jackpot_payout = if rule.is_jackpot { "*" } else { "" };
+                (title + &is_jackpot, payout + &is_jackpot_payout, false)
+            }).collect::<Vec<_>>());
 
-        for rule in &self.pay_table {
-            let title = self.get_pay_rule_title(rule);
-            let payout = rule.payout.to_string();
-            let is_jackpot = if rule.is_jackpot {
-                "*"
-            } else {
-                ""
-            };
-            embed.field(title + &is_jackpot, payout, false);
-        }
+        embed
     }
 
     fn get_pay_rule_title(&self, rule: &PayRule) -> String {
@@ -220,7 +218,7 @@ impl SlotMachine {
                     .join(", ");
                 format!("{}x any of [{}]", min_count, symbol_str)
             }
-            PayPattern::MinCount(symbol, min_count) => self.get_symbol_string(*symbol).repeat(*min_count)
+            PayPattern::MinCount(symbol, min_count) => self.get_symbol_string(*symbol).repeat(*min_count as usize),
         }
     }
 }

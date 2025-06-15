@@ -48,6 +48,7 @@ pub async fn slots(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
+#[poise::command(slash_command)]
 pub async fn paytable(ctx: Context<'_>) -> Result<(), Error> {
     let embed = {
         let slot_machine = GORE_SLOT_MACHINE.lock().unwrap();
