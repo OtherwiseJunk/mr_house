@@ -3,10 +3,9 @@ use poise::Command;
 
 pub mod info;
 pub mod slot_machine;
-
-pub use self::info::info;
-pub use self::slot_machine::*;
+pub mod libcoin;
 
 pub fn get_commands() -> Vec<Command<Data, Error>> {
-    vec![info::info(), slots::slots()]
+    vec![info::info(), slot_machine::slots::slots(),
+        libcoin::balance(), libcoin::deduct(), libcoin::grant()]
 }

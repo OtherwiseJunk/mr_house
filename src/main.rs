@@ -1,6 +1,9 @@
 mod commands;
+mod services;
 
-use crate::commands::*;
+use dotenv::dotenv;
+use poise::serenity_prelude as serenity;
+use once_cell::sync::Lazy;
 
 type Error = Box<dyn std::error::Error + Send + Sync>;
 type Context<'a> = poise::Context<'a, Data, Error>;
@@ -9,16 +12,44 @@ pub mod built_info {
     include!(concat!(env!("OUT_DIR"), "/built.rs"));
 }
 
-pub struct Data;
+pub static PANOPTICON_TOKEN: Lazy<String> = Lazy::new(|| {
+    std::env::var("PANOPTICON_TOKEN")
+        .expect("Expected PANOPTICON_TOKEN environment variable")
+});
 
-fn main() {
-    //let mut slot_machine = generate_gore_slots();
-    test_gore_slots();
-    // let token = std::env::var("DISCORD_TOKEN").expect("Expected DISCORD_TOKEN environment variable");
-    // let intents = serenity::GatewayIntents::non_privileged()
+pub struct Data {}
+
+#[tokio::main]
+async fn main() {
+    dotenv().ok();
+
+    let token = std::env::var("DISCORD_TOKEN").expect("Expected DISCORD_TOKEN environment variable");
+    let intents = serenity::GatewayIntents::non_privileged();
+
+    let framework = poise::Framework::builder()
+        .options(poise::FrameworkOptions {
+            commands: commands::get_commands(),
+            ..Default::default()
+        })
+        .setup(|ctx, _ready, framework| {
+            Box::pin(async move {
+                poise::builtins::register_globally(ctx, &framework.options().commands)
+                .await
+                .map_err(Error::from)?;
+                Ok(Data {})
+            })
+        })
+        .build();
+
+    let mut client = serenity::ClientBuilder::new(token, intents)
+        .framework(framework)
+        .await
+        .expect("Error creating client");
+
+    client.start().await.unwrap();
 }
 
-fn test_gore_slots() {
+/*fn test_gore_slots() {
     let mut slot_machine = generate_gore_slots();
     // Simulate 100000 spins to calculate RTP
     let mut plays: Vec<PlayResult> = Vec::new();
@@ -51,4 +82,4 @@ fn test_gore_slots() {
         "Average Jackpot Winnings: {:.2}",
         jackpot_winnings as f64 / jackpot_count as f64
     );
-}
+}*/

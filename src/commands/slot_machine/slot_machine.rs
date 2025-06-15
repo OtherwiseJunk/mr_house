@@ -26,6 +26,7 @@ pub struct PayRule {
     pub is_jackpot: bool,
 }
 
+#[derive(Debug)]
 pub struct PlayResult {
     pub symbols: Vec<String>,
     pub payout: u32,
@@ -41,8 +42,6 @@ pub struct SlotMachine {
     symbol_map: HashMap<Symbol, String>,
     weighted_symbol_pool: Vec<Symbol>,
 }
-
-pub struct RTPBalancer {}
 
 fn check_pay_pattern_match(symbols: &[Symbol], pattern: &PayPattern) -> bool {
     match pattern {
@@ -166,7 +165,9 @@ impl SlotMachine {
             self.min_jackpot,
         );
 
-        self.rolling_jackpot = next_jackpot_value;
+        // Round the jackpot to 8 decimal places before storing
+        let factor = 100_000_000.0; // 10^8
+        self.rolling_jackpot = (next_jackpot_value * factor).round() / factor;
 
         let display_symbols: Vec<String> = generated_symbols
             .iter()
