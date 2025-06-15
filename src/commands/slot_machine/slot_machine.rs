@@ -194,13 +194,15 @@ impl SlotMachine {
         let embed = CreateEmbed::new()
             .title("Pay Table")
             .color(0x5b9e48)
-            .footer(CreateEmbedFooter::new("* Jackpot payouts are rolling, this value is the minimum."))
+            .footer(CreateEmbedFooter::new("RTP: ~90%"))
             .fields(self.pay_table.iter().map(|rule| {
                 let title = self.get_pay_rule_title(rule);
-                let payout = rule.payout.to_string();
-                let is_jackpot = if rule.is_jackpot { " (Jackpot)" } else { "" };
-                let is_jackpot_payout = if rule.is_jackpot { "*" } else { "" };
-                (title + &is_jackpot, payout + &is_jackpot_payout, false)
+                let payout = if rule.is_jackpot {
+                    self.rolling_jackpot.to_string()
+                } else {
+                    rule.payout.to_string()
+                };
+                (title, payout, false)
             }).collect::<Vec<_>>());
 
         embed
@@ -208,7 +210,10 @@ impl SlotMachine {
 
     fn get_pay_rule_title(&self, rule: &PayRule) -> String {
         match &rule.pattern {
-            PayPattern::FiveOfAKind(symbol) => self.get_symbol_string(*symbol).repeat(5),
+            PayPattern::FiveOfAKind(symbol) => {
+                let jackpot_indicator = if rule.is_jackpot { " (Jackpot)" } else { "" }; 
+                self.get_symbol_string(*symbol).repeat(5) + jackpot_indicator
+            },
             PayPattern::ThreeOfAKind(symbol) => self.get_symbol_string(*symbol).repeat(3),
             PayPattern::MinCountAnyDistribution(symbols, min_count) => {
                 let symbol_str = symbols
