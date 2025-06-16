@@ -17,6 +17,8 @@ RUN cargo build --release --bin mr_house
 
 FROM debian:bookworm-slim AS runtime
 
+RUN apt-get update
+RUN apt-get upgrade -y
 WORKDIR /app
 COPY --from=builder /usr/src/app/target/release/mr_house .
 
