@@ -3,6 +3,7 @@ from rust:1.78 as builder
 WORKDIR /usr/src/app
 COPY Cargo.toml Cargo.lock ./
 
+RUN mkdir src
 RUN echo "fn main() {println!(\"Building dummy for dependency caching...\");}" > src/main.rs
 RUN cargo build --release --bin mr_house
 
