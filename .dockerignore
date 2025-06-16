@@ -1,0 +1,9 @@
+.git
+target/
+Dockerfile
+.vscode/
+.devcontainer/
+.github/
+.env
+example.env
+# Add any other files or directories that are not needed for the build
