@@ -1,7 +1,8 @@
 use crate::{PANOPTICON_TOKEN, Error};
 use reqwest::Client;
 use once_cell::sync::Lazy;
-use serde::Serialize;
+use serde::{Serialize,Deserialize};
+use std::collections::HashSet;
 
 const API_KEY_HEADER: &str = "ApiKey";
 static HTTP_CLIENT: Lazy<Client> = Lazy::new(Client::new);
@@ -14,6 +15,24 @@ struct LibcoinTransactionPayload {
     amount: f64,
     #[serde(rename = "Message")]
     message: String,
+}
+
+#[derive(Deserialize, Debug)]
+pub struct LibcoinTransactionRecord {
+    #[serde(rename = "id")]
+    id: u64,
+    #[serde(rename = "sendingUser")]
+    sending_user: String,
+    #[serde(rename = "receivingUser")]
+    receiving_user: String,
+    #[serde(rename = "amount")]
+    pub amount: f64,
+    #[serde(rename = "transactionMessage")]
+    pub transaction_message: String,
+    #[serde(rename = "transactionType")]
+    transaction_type: i32,
+    #[serde(rename = "transactionDate")]
+    transaction_date: String,
 }
 
 pub async fn get_libcoin_balance(user_id: u64) -> Result<f64, Error> {
@@ -44,6 +63,42 @@ pub async fn grant_libcoin(user_id: u64, amount: f64, message: &str) -> Result<(
 
     libcoin_transaction(user_id, amount, message, &url).await
     .map_err(|e| Error::from(format!("Failed to grant libcoin: {}", e)))
+}
+
+pub async fn get_user_transactions(user_id: u64) -> Result<Vec<LibcoinTransactionRecord>, Error> {
+    const PAGE_SIZE: usize = 10000;
+    let mut page_number = 1;
+    let mut all_transactions: Vec<LibcoinTransactionRecord> = Vec::new();
+    let mut seen_transaction_ids: HashSet<u64> = HashSet::new();
+
+    loop {
+        let url = format!(
+            "https://panopticon.cacheblasters.com/libcoin/transactions/{}?pageSize={}&pageNumber={}",
+            user_id, PAGE_SIZE, page_number
+        );
+
+        let response = HTTP_CLIENT
+            .get(&url)
+            .header(API_KEY_HEADER, PANOPTICON_TOKEN.as_str())
+            .send()
+            .await?
+            .error_for_status()?;
+
+        let current_page_transactions: Vec<LibcoinTransactionRecord> = response.json().await?;
+
+        if current_page_transactions.is_empty() {
+            break;
+        }
+
+        for transaction in current_page_transactions {
+            if seen_transaction_ids.insert(transaction.id) {
+                all_transactions.push(transaction);
+            }
+        }
+        page_number += 1;
+    }
+
+    Ok(all_transactions)
 }
 
 async fn libcoin_transaction(user_id: u64, amount: f64, message: &str, url: &str) -> Result<(), Error> {

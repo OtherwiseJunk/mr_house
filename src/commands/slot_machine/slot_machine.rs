@@ -35,7 +35,7 @@ pub struct PlayResult {
 }
 
 pub struct SlotMachine {
-    cost_per_play: u32,
+    pub cost_per_play: u32,
     pay_table: Vec<PayRule>,
     rolling_jackpot: f64,
     min_jackpot: u32,
@@ -192,7 +192,7 @@ impl SlotMachine {
 
     pub fn get_pay_table_embed(&self) -> CreateEmbed {
         let embed = CreateEmbed::new()
-            .title("Pay Table")
+            .title(format!("Pay Table - {} Libcoin a Spin", self.cost_per_play))
             .color(0x5b9e48)
             .footer(CreateEmbedFooter::new("RTP: ~90%"))
             .fields(self.pay_table.iter().map(|rule| {
