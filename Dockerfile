@@ -17,8 +17,10 @@ RUN cargo build --release --bin mr_house
 
 FROM debian:bookworm-slim AS runtime
 
-RUN apt-get update
-RUN apt-get upgrade -y
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends libssl3 ca-certificates && \
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 WORKDIR /app
 COPY --from=builder /usr/src/app/target/release/mr_house .
 
