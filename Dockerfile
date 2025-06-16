@@ -15,7 +15,7 @@ COPY build.rs ./
 RUN touch src/main.rs
 RUN cargo build --release --bin mr_house
 
-FROM debian:bullseye-slim AS runtime
+FROM debian:bookworm-slim AS runtime
 
 WORKDIR /app
 COPY --from=builder /usr/src/app/target/release/mr_house .
