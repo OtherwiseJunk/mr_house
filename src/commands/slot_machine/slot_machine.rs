@@ -121,12 +121,19 @@ impl SlotMachine {
         pay_table: Vec<PayRule>,
         jackpot_growth_rate: f64,
         weighted_symbol_pool: Vec<Symbol>,
+        previous_rolling_jackpot: f64,
     ) -> Self {
         let min_jackpot = pay_table
             .iter()
             .find(|rule| rule.is_jackpot)
             .map(|rule| rule.payout)
             .expect("Pay table must contain at least one jackpot rule (is_jackpot = true)");
+
+        let rolling_jackpot = if previous_rolling_jackpot < min_jackpot as f64 {
+            min_jackpot as f64
+        } else {
+            previous_rolling_jackpot
+        };
 
         let mut symbol_map = HashMap::new();
         symbol_map.insert(Symbol::Gore, "<:gore:854587419391164457>".to_string());
@@ -148,7 +155,7 @@ impl SlotMachine {
         SlotMachine {
             cost_per_play,
             pay_table,
-            rolling_jackpot: min_jackpot as f64,
+            rolling_jackpot: rolling_jackpot,
             min_jackpot,
             jackpot_growth_rate,
             symbol_map,
@@ -194,7 +201,7 @@ impl SlotMachine {
         let embed = CreateEmbed::new()
             .title(format!("Pay Table - {} Libcoin a Spin", self.cost_per_play))
             .color(0x5b9e48)
-            .footer(CreateEmbedFooter::new("RTP: ~90%"))
+            .footer(CreateEmbedFooter::new("RTP: ~97%"))
             .fields(self.pay_table.iter().map(|rule| {
                 let title = self.get_pay_rule_title(rule);
                 let payout = if rule.is_jackpot {

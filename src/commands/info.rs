@@ -5,7 +5,11 @@ use serenity::builder::{CreateEmbed, CreateEmbedFooter};
 use tokio::time::Instant;
 use tracing::error;
 
-#[poise::command(slash_command)]
+#[poise::command(
+    slash_command,
+    description_localized("en-US", "Displays bot infromation on library versions, response time, and last build time."),
+    description_localized("fr", "Infos bot: versions, temps de réponse, dernière génération.")
+)]
 pub async fn info(ctx: Context<'_>) -> Result<(), Error> {
     let ping = ctx.ping().await;
 

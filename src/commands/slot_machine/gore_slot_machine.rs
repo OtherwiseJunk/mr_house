@@ -30,7 +30,7 @@ fn gore_slots_paytable() -> Vec<PayRule> {
         },
         PayRule {
             pattern: PayPattern::MinCount(Symbol::Smileyes, 2),
-            payout: 5,
+            payout: 6,
             is_jackpot: false,
         },
         PayRule {
@@ -38,7 +38,7 @@ fn gore_slots_paytable() -> Vec<PayRule> {
                 vec![Symbol::Smugbrow, Symbol::Magnathonk, Symbol::Mean],
                 3,
             ),
-            payout: 5,
+            payout: 6,
             is_jackpot: false,
         },
         PayRule {
@@ -49,7 +49,7 @@ fn gore_slots_paytable() -> Vec<PayRule> {
     ]
 }
 
-pub fn generate_gore_slots() -> SlotMachine {
+pub fn generate_gore_slots(previous_rolling_jackpot: f64) -> SlotMachine {
     let weighted_symbol_pool: Vec<Symbol> = generate_gore_slots_weights();
     let pay_table: Vec<PayRule> = gore_slots_paytable();
     let cost_per_play: u32 = 10; // Cost per play in cents
@@ -59,6 +59,7 @@ pub fn generate_gore_slots() -> SlotMachine {
         pay_table,
         jackpot_growth_rate,
         weighted_symbol_pool,
+        previous_rolling_jackpot,
     );
     return slot_machine;
 }

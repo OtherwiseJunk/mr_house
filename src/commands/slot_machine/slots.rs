@@ -1,5 +1,5 @@
 use super::{generate_gore_slots, SlotMachine, PlayResult};
-use crate::{Context, Error};
+use crate::{Context, Error, PREVIOUS_ROLLING_JACKPOT};
 use once_cell::sync::Lazy;
 use std::sync::Mutex;
 use serenity::builder::{CreateEmbed, CreateEmbedFooter};
@@ -8,13 +8,17 @@ use poise::serenity_prelude as serenity;
 use crate::services::libcoin::{grant_libcoin, deduct_libcoin, get_libcoin_balance, get_user_transactions};
 
 pub static GORE_SLOT_MACHINE: Lazy<Mutex<SlotMachine>> =
-    Lazy::new(|| Mutex::new(generate_gore_slots()));
+    Lazy::new(|| Mutex::new(generate_gore_slots(*PREVIOUS_ROLLING_JACKPOT)));
 
 const MR_HOUSE_ID: u64 = 1382600478206066769;
 const DEDUCT_MESSAGE: &str = "Playing the slot machine";
 const GRANT_MESSAGE: &str = "Winning from the slot machine";
 
-#[poise::command(slash_command)]
+#[poise::command(
+    slash_command,
+    description_localized("en-US", "Spin the slot machine for a chance to win Libcoin! Costs 10 Libcoin per spin."),
+    description_localized("fr", "Faites tourner la machine à sous pour tenter de gagner des Libcoins! Coût : 10 Libcoins par tour.")
+)]
 pub async fn slots(ctx: Context<'_>) -> Result<(), Error> {
 
     let user_id = ctx.author().id.get();
@@ -51,7 +55,11 @@ pub async fn slots(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-#[poise::command(slash_command)]
+#[poise::command(
+    slash_command,
+    description_localized("en-US", "View the slot machine's paytable."),
+    description_localized("fr", "Consultez la table des gains de la machine à sous.")
+)]
 pub async fn paytable(ctx: Context<'_>) -> Result<(), Error> {
     let embed = {
         let slot_machine = GORE_SLOT_MACHINE.lock().unwrap();
@@ -67,7 +75,10 @@ pub async fn paytable(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-#[poise::command(slash_command)]
+#[poise::command(slash_command,
+    description_localized("en-US", "View how much Libcoin you've spent and won playing the slot machine."),
+    description_localized("fr", "Voyez combien de Libcoin vous avez dépensés et gagnés en jouant à la machine à sous.")
+    )]
 pub async fn stats(ctx: Context<'_>) -> Result<(), Error> {
     let transactions = get_user_transactions(ctx.author().id.get()).await
         .map_err(|_| Error::from("Sorry, looks like I'm having trouble contacting the bank."))?;
