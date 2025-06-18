@@ -8,7 +8,8 @@ use tracing::error;
 #[poise::command(
     slash_command,
     description_localized("en-US", "Displays bot infromation on library versions, response time, and last build time."),
-    description_localized("fr", "Infos bot: versions, temps de réponse, dernière génération.")
+    description_localized("fr", "Infos bot: versions, temps de réponse, dernière génération."),
+    description_localized("es-ES", "Muestra información del bot en versiones antiguas tiempo de respuesta y último tiempo de creación.")
 )]
 pub async fn info(ctx: Context<'_>) -> Result<(), Error> {
     let ping = ctx.ping().await;

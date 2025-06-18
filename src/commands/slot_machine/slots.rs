@@ -1,11 +1,13 @@
-use super::{generate_gore_slots, SlotMachine, PlayResult};
+use super::{generate_gore_slots, PlayResult, SlotMachine};
+use crate::services::libcoin::{
+    deduct_libcoin, get_libcoin_balance, get_user_transactions, grant_libcoin,
+};
 use crate::{Context, Error, PREVIOUS_ROLLING_JACKPOT};
 use once_cell::sync::Lazy;
-use std::sync::Mutex;
-use serenity::builder::{CreateEmbed, CreateEmbedFooter};
-use poise::CreateReply;
 use poise::serenity_prelude as serenity;
-use crate::services::libcoin::{grant_libcoin, deduct_libcoin, get_libcoin_balance, get_user_transactions};
+use poise::CreateReply;
+use serenity::builder::{CreateEmbed, CreateEmbedFooter};
+use std::sync::Mutex;
 
 pub static GORE_SLOT_MACHINE: Lazy<Mutex<SlotMachine>> =
     Lazy::new(|| Mutex::new(generate_gore_slots(*PREVIOUS_ROLLING_JACKPOT)));
@@ -17,10 +19,10 @@ const GRANT_MESSAGE: &str = "Winning from the slot machine";
 #[poise::command(
     slash_command,
     description_localized("en-US", "Spin the slot machine for a chance to win Libcoin! Costs 10 Libcoin per spin."),
-    description_localized("fr", "Faites tourner la machine à sous pour tenter de gagner des Libcoins! Coût : 10 Libcoins par tour.")
+    description_localized("fr", "Faites tourner la machine à sous pour tenter de gagner des Libcoins! Coût : 10 Libcoins par tour."),
+    description_localized("es-ES", "Gira la ruleta para ganar Libcoin! 10 Libcoin por giro!")
 )]
 pub async fn slots(ctx: Context<'_>) -> Result<(), Error> {
-
     let user_id = ctx.author().id.get();
     let play_cost = {
         let slot_machine = GORE_SLOT_MACHINE.lock().unwrap();
@@ -28,13 +30,24 @@ pub async fn slots(ctx: Context<'_>) -> Result<(), Error> {
     };
 
     if get_libcoin_balance(user_id).await? < play_cost as f64 {
-        return Err(Error::from("You don't have enough libcoin to play the slot machine!"));
+        return Err(Error::from(
+            "You don't have enough libcoin to play the slot machine!",
+        ));
     }
 
-    deduct_libcoin(user_id, play_cost as f64, DEDUCT_MESSAGE).await
+    deduct_libcoin(user_id, play_cost as f64, DEDUCT_MESSAGE)
+        .await
         .map_err(|_| Error::from("Sorry, looks like I'm having trouble contacting the bank."))?;
-    grant_libcoin(MR_HOUSE_ID, play_cost as f64, &format!("Payment from {} playing the slot machine", ctx.author().name)).await
-        .map_err(|_| Error::from("Sorry, looks like I'm having trouble contacting the bank."))?;
+    grant_libcoin(
+        MR_HOUSE_ID,
+        play_cost as f64,
+        &format!(
+            "Payment from {} playing the slot machine",
+            ctx.author().name
+        ),
+    )
+    .await
+    .map_err(|_| Error::from("Sorry, looks like I'm having trouble contacting the bank."))?;
 
     let play_result = {
         let mut slot_machine = GORE_SLOT_MACHINE.lock().unwrap();
@@ -58,7 +71,8 @@ pub async fn slots(ctx: Context<'_>) -> Result<(), Error> {
 #[poise::command(
     slash_command,
     description_localized("en-US", "View the slot machine's paytable."),
-    description_localized("fr", "Consultez la table des gains de la machine à sous.")
+    description_localized("fr", "Consultez la table des gains de la machine à sous."),
+    description_localized("es-ES", "Mira la lista de pagos de la ruleta.")
 )]
 pub async fn paytable(ctx: Context<'_>) -> Result<(), Error> {
     let embed = {
@@ -75,12 +89,24 @@ pub async fn paytable(ctx: Context<'_>) -> Result<(), Error> {
     Ok(())
 }
 
-#[poise::command(slash_command,
-    description_localized("en-US", "View how much Libcoin you've spent and won playing the slot machine."),
-    description_localized("fr", "Voyez combien de Libcoin vous avez dépensés et gagnés en jouant à la machine à sous.")
-    )]
+#[poise::command(
+    slash_command,
+    description_localized(
+        "en-US",
+        "View how much Libcoin you've spent and won playing the slot machine."
+    ),
+    description_localized(
+        "fr",
+        "Voyez combien de Libcoin vous avez dépensés et gagnés en jouant à la machine à sous."
+    ),
+    description_localized(
+        "es-ES",
+        "Revisa cuantos Libcoins has invertido y cuantos has ganado en la ruleta."
+    )
+)]
 pub async fn stats(ctx: Context<'_>) -> Result<(), Error> {
-    let transactions = get_user_transactions(ctx.author().id.get()).await
+    let transactions = get_user_transactions(ctx.author().id.get())
+        .await
         .map_err(|_| Error::from("Sorry, looks like I'm having trouble contacting the bank."))?;
 
     if transactions.is_empty() {
@@ -92,11 +118,13 @@ pub async fn stats(ctx: Context<'_>) -> Result<(), Error> {
         return Ok(());
     }
 
-    let total_spent: f64 = transactions.iter()
+    let total_spent: f64 = transactions
+        .iter()
         .filter(|t| t.transaction_message == DEDUCT_MESSAGE)
         .map(|t| t.amount)
         .sum();
-    let total_won: f64 = transactions.iter()
+    let total_won: f64 = transactions
+        .iter()
         .filter(|t| t.transaction_message == GRANT_MESSAGE)
         .map(|t| t.amount)
         .sum();
@@ -107,7 +135,7 @@ pub async fn stats(ctx: Context<'_>) -> Result<(), Error> {
         .fields([
             ("Total Spent", format!("{:.2} libcoin", total_spent), true),
             ("Total Won", format!("{:.2} libcoin", total_won), true),
-            ("Net Gain/Loss", format!("{:.2} libcoin", net_gain), true)
+            ("Net Gain/Loss", format!("{:.2} libcoin", net_gain), true),
         ]);
 
     ctx.send(CreateReply {
@@ -119,14 +147,19 @@ pub async fn stats(ctx: Context<'_>) -> Result<(), Error> {
 }
 
 fn build_result_embed(play_result: &PlayResult) -> CreateEmbed {
-    let symbols: String = play_result.symbols.iter()
+    let symbols: String = play_result
+        .symbols
+        .iter()
         .map(|s| s.to_string())
         .collect::<Vec<_>>()
         .join("");
     let footer_message = if play_result.payout >= 500 {
         "🎉 Jackpot! 🎉".to_string()
     } else if play_result.payout > 0 {
-        format!("You won! Maybe next time you'll hit the jackpot!\nCurrent Jackpot:{}", play_result.current_jackpot_value)
+        format!(
+            "You won! Maybe next time you'll hit the jackpot!\nCurrent Jackpot:{}",
+            play_result.current_jackpot_value
+        )
     } else {
         "Better luck next time!".to_string()
     };
@@ -137,7 +170,7 @@ fn build_result_embed(play_result: &PlayResult) -> CreateEmbed {
         .footer(CreateEmbedFooter::new(footer_message))
         .fields([
             ("Spin Result", symbols, false),
-            ("Payout", play_result.payout.to_string(), true)
+            ("Payout", play_result.payout.to_string(), true),
         ]);
 
     embed
