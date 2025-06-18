@@ -10,9 +10,7 @@ pub fn get_commands() -> Vec<Command<Data, Error>> {
         info::info(), 
         slot_machine::slots::slots(), 
         slot_machine::slots::paytable(),
-        libcoin::balance(), 
-        libcoin::deduct(), 
-        libcoin::grant(),
+        libcoin::balance(),
         slot_machine::slots::stats(),
     ]
 }
